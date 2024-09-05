@@ -38,6 +38,11 @@ if (io.KeyShift && io.MouseDown[0] && mouseUVCoord.x >= 0.f && mouseUVCoord.y >=
         imageInspect(width, height, pickerImage.GetBits(), mouseUVCoord, displayedTextureSize);
 }
 */
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-braces" // Disable -Wmissing-braces
+#endif
+
 #pragma once
 
 #include <array>
@@ -223,3 +228,7 @@ namespace ImageInspect {
         ImGui::EndTooltip();
     }
 } // namespace ImageInspect
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
