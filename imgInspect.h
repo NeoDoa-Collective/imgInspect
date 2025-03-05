@@ -130,7 +130,7 @@ namespace ImageInspect {
         );
     }
 
-    inline void inspect(const int width, const int height, const unsigned char* const bits, ImVec2 mouseUVCoord, ImVec2 displayedTextureSize, bool drawNormals = false, bool drawHistogram = false) {
+    inline void inspect(const int width, const int height, const unsigned char* const bits, ImVec2 mouseUVCoord, ImVec2 displayedTextureSize, bool drawNormals = false, bool drawHistogram = false, int components = 4) {
         ImGui::BeginTooltip();
         ImGui::BeginGroup();
         ImDrawList* draw_list = ImGui::GetWindowDrawList();
@@ -147,17 +147,18 @@ namespace ImageInspect {
         const int basey = ImClamp(int(mouseUVCoord.y * height), 0, height - 1);
         for (int y = -zoomSize; y <= zoomSize; y++) {
             for (int x = -zoomSize; x <= zoomSize; x++) {
-                uint32_t texel;
+                ImColor texel;
                 if (basex + x < 0 ||
                     basey - y < 0 ||
                     basex + x >= width ||
                     basey - y >= height) {
-                    texel = 0;
+                    texel = ImColor();
                 } else {
-                    texel = ((uint32_t*) bits)[(basey - y) * width + x + basex];
+                    const unsigned char* base = &(bits[((basey - y) * width + x + basex) * components]);
+                    texel = ImColor(base[0], base[1], base[2], base[3]);
                 }
                 ImVec2 pos = pickRc.Min + ImVec2(float(x + zoomSize), float(y + zoomSize)) * quadSize;
-                draw_list->AddRectFilled(pos, pos + quadSize, texel);
+                draw_list->AddRectFilled(pos, pos + quadSize, ImGui::ColorConvertFloat4ToU32(texel));
             }
         }
         ImGui::SameLine();
@@ -172,14 +173,15 @@ namespace ImageInspect {
             ImRect normRc(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
             for (int y = -zoomSize; y <= zoomSize; y++) {
                 for (int x = -zoomSize; x <= zoomSize; x++) {
-                    uint32_t texel;
+                    ImColor texel;
                     if (basex + x < 0 ||
                         basey - y < 0 ||
                         basex + x >= width ||
                         basey - y >= height) {
-                        texel = 0;
+                        texel = ImColor();
                     } else {
-                        texel = ((uint32_t*) bits)[(basey - y) * width + x + basex];
+                        const unsigned char* base = &(bits[((basey - y) * width + x + basex) * components]);
+                        texel = ImColor(base[0], base[1], base[2], base[3]);
                     }
                     const ImVec2 posQuad = normRc.Min + ImVec2(float(x + zoomSize), float(y + zoomSize)) * quadSize;
                     //draw_list->AddRectFilled(pos, pos + quadSize, texel);
@@ -194,8 +196,9 @@ namespace ImageInspect {
         ImGui::EndGroup();
         ImGui::SameLine();
         ImGui::BeginGroup();
-        uint32_t texel = ((uint32_t*) bits)[basey * width + basex];
-        ImVec4 rgbFloat = ImColor(texel); /* [0-1] */
+        const unsigned char* base = &(bits[(basey * width + basex) * components]);
+        ImColor texel = ImColor(base[0], base[1], base[2], base[3]);
+        ImVec4 rgbFloat = texel; /* [0-1] */
         std::array<int, 4> rgb = { /* [0-255]*/
             static_cast<int>(std::round(rgbFloat.x * 255.0f)),
             static_cast<int>(std::round(rgbFloat.y * 255.0f)),
